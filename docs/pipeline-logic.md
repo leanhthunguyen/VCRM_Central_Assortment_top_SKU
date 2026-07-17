@@ -137,14 +137,26 @@ Pick the 3 highest-ranked gaps per vendor.
 
 **Why 3:** Actionable email limit. Recommending 10+ products overwhelms the vendor. 3 is the sweet spot for conversion.
 
-### Final: Targeting
+### Final: Dual Use-Case Targeting
 
-Only target vendors who meet BOTH conditions:
+Two independent targeting columns, both using TRUE/FALSE booleans:
+
+**targeted_usecase1** (SKU Gap Recommendation) — vendor is mature enough AND has a material gap:
 
 | Condition | Threshold | Rationale |
 |---|---|---|
 | VPS ≥ 50 | Vendor must be active and healthy | Low-VPS vendors are inactive or churning — recommendations won't convert |
+| vendor_active_skus ≥ 80% × mature_threshold | Vendor has a sufficiently large catalog | Near-mature vendors benefit most from filling specific gaps |
 | gap_rev / vendor_GMV ≥ 1% | Opportunity must be material | If the gap is 0.01% of their GMV, it's not worth an email |
+
+**targeted_usecase2** (Minimum SKU Expansion) — vendor is below the maturity threshold:
+
+| Condition | Threshold | Rationale |
+|---|---|---|
+| VPS ≥ 50 | Vendor must be active and healthy | Same as above |
+| vendor_active_skus < 80% × mature_threshold | Vendor catalog is too thin | These vendors need broader assortment expansion, not just specific gap fills |
+
+The output also includes `vendor_active_skus` and `mature_threshold` columns for transparency.
 
 ## Under-Merge Risk
 

@@ -112,6 +112,14 @@ active_skus AS (
   HAVING SUM(daily_buyable_rate_eligible_ref) > 0
 ),
 
+-- ─── STEP 6b: VENDOR SKU COUNT (active products per vendor) ─────────────────
+vendor_sku_count AS (
+  SELECT global_entity_id, platform_vendor_id,
+    COUNT(DISTINCT platform_product_id) AS vendor_active_skus
+  FROM active_skus
+  GROUP BY global_entity_id, platform_vendor_id
+),
+
 -- ─── STEP 7: VENDOR ACTIVE CATALOG via SUPPLY alias ─────────────────────────
 all_vendor_active_products AS (
   SELECT DISTINCT
@@ -323,19 +331,35 @@ SELECT
     MAX(vendor_gmv_eur)
   ) * 100, 2) AS pct_of_vendor_gmv,
 
-  MAX(vps_v11) AS vps_v11,
-
-  CASE
-    WHEN MAX(vps_v11) >= 50
-     AND ROUND(SAFE_DIVIDE(
-           COALESCE(MAX(CASE WHEN vendor_gap_rank = 1 THEN weighted_est_revenue_eur END), 0)
-         + COALESCE(MAX(CASE WHEN vendor_gap_rank = 2 THEN weighted_est_revenue_eur END), 0)
-         + COALESCE(MAX(CASE WHEN vendor_gap_rank = 3 THEN weighted_est_revenue_eur END), 0),
-           MAX(vendor_gmv_eur)
-         ) * 100, 2) >= 1
-    THEN 'yes' ELSE 'no'
-  END AS targeted
+  MAX(vps_v11) AS vps_v11
 
 FROM top3_enriched
 GROUP BY global_entity_id, vertical_segment, city, platform_vendor_id, vendor_name, vendor_sessions
-ORDER BY global_entity_id, vertical_segment, city, platform_vendor_id
+)
+
+-- ─── FINAL: Add SKU count + threshold + dual use-case targeting ─────────────
+SELECT f.*,
+  COALESCE(vsc.vendor_active_skus, 0) AS vendor_active_skus,
+  COALESCE(st.mature_threshold, 0) AS mature_threshold,
+
+  CASE
+    WHEN f.vps_v11 >= 50
+     AND COALESCE(vsc.vendor_active_skus, 0) >= 0.8 * COALESCE(st.mature_threshold, 999999)
+     AND f.pct_of_vendor_gmv >= 1
+    THEN TRUE ELSE FALSE
+  END AS targeted_usecase1,
+
+  CASE
+    WHEN f.vps_v11 >= 50
+     AND COALESCE(vsc.vendor_active_skus, 0) < 0.8 * COALESCE(st.mature_threshold, 999999)
+    THEN TRUE ELSE FALSE
+  END AS targeted_usecase2
+
+FROM final_output f
+LEFT JOIN vendor_sku_count vsc
+  ON f.global_entity_id = vsc.global_entity_id
+  AND f.platform_vendor_id = vsc.platform_vendor_id
+LEFT JOIN `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_sku_threshold` st
+  ON f.global_entity_id = st.global_entity_id
+  AND f.vertical_segment = st.vertical_segment
+ORDER BY f.global_entity_id, f.vertical_segment, f.city, f.platform_vendor_id
