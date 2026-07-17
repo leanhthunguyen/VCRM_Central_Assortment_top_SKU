@@ -217,6 +217,30 @@ top3_enriched AS (
     AND g.alias_product_id = pm.alias_product_id
 ),
 
+-- ─── VENDOR USERS: map vendor → uuid ─────────────────────────────────────────
+vendor_users AS (
+  SELECT
+    u.user_id AS uuid,
+    v.vendor_id AS vendor_code,
+    v.global_entity_id
+  FROM `fulfillment-dwh-production.curated_data_shared_vendor.growth_vendor_users` u
+  LEFT JOIN UNNEST(vendors) v
+  WHERE NOT COALESCE(u.is_deleted, FALSE)
+    AND NOT COALESCE(v.node_is_deleted, FALSE)
+    AND v.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  GROUP BY ALL
+),
+
+-- ─── INSIDER ATTRIBUTES: uuid → vertical_food, role, multi-vendor ───────────
+insider_attributes AS (
+  SELECT
+    uuid,
+    va_vertical_food,
+    cd_role,
+    cd_is_multi_vendor_user
+  FROM `fulfillment-dwh-production.curated_data_shared_vendor.growth_vendor_communications_attributes_export`
+),
+
 -- ─── FINAL OUTPUT: one row per vendor, top 3 gaps pivoted ────────────────────
 final_output AS (
 SELECT
@@ -293,7 +317,12 @@ SELECT f.*,
     WHEN f.vps_v11 >= 50
      AND COALESCE(vsc.vendor_active_skus, 0) < 0.8 * COALESCE(st.mature_threshold, 999999)
     THEN TRUE ELSE FALSE
-  END AS targeted_usecase2
+  END AS targeted_usecase2,
+
+  vu.uuid,
+  ia.va_vertical_food,
+  ia.cd_role,
+  ia.cd_is_multi_vendor_user
 
 FROM final_output f
 LEFT JOIN vendor_sku_count vsc
@@ -302,4 +331,9 @@ LEFT JOIN vendor_sku_count vsc
 LEFT JOIN `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_sku_threshold` st
   ON f.global_entity_id = st.global_entity_id
   AND f.vertical_segment = st.vertical_segment
+LEFT JOIN vendor_users vu
+  ON f.global_entity_id = vu.global_entity_id
+  AND f.platform_vendor_id = vu.vendor_code
+LEFT JOIN insider_attributes ia
+  ON vu.uuid = ia.uuid
 ORDER BY f.global_entity_id, f.vertical_segment, f.city, f.platform_vendor_id
