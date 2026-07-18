@@ -22,6 +22,7 @@ all_vendor_dims AS (
   WHERE report_month = '2026-05-01'
     AND LOWER(vertical) NOT LIKE '%dark%'
     AND is_key_partner IS NOT TRUE
+    AND is_online IS TRUE
 ),
 vendor_sessions_lookup AS (
   SELECT global_entity_id, platform_vendor_id,

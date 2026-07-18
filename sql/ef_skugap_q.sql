@@ -24,6 +24,7 @@ all_vendor_dims AS (
 AND report_month = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH),MONTH)
     AND LOWER(vertical) NOT LIKE '%dark%'
     AND is_key_partner IS NOT TRUE
+    AND is_online IS TRUE
 ),
 vendor_sessions_lookup AS (
   SELECT global_entity_id, platform_vendor_id,
