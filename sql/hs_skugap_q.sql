@@ -337,4 +337,5 @@ LEFT JOIN vendor_users vu
   AND f.platform_vendor_id = vu.vendor_code
 LEFT JOIN insider_attributes ia
   ON vu.uuid = ia.uuid
+WHERE ia.va_vertical_food IS NOT NULL
 ORDER BY f.global_entity_id, f.vertical_segment, f.city, f.platform_vendor_id
