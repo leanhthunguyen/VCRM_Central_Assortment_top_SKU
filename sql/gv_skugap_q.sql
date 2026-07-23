@@ -7,7 +7,7 @@
 --   vendor_crm_comms_demand_supply_bridge   (demand_alias_id ↔ supply_alias_id)
 --   vendor_crm_comms_product_metadata       (alias_product_id → name, image, barcode)
 --
--- Markets: GV_IT,GV_ES,GV_PT,GV_UA,GV_PL,GV_RO,GV_GE,GV_KZ,GV_HR,GV_RS,GV_BG,GV_MA,GV_CI,GV_KE,GV_UG,GV_GH,GV_AM,GV_AZ,GV_BA,GV_ME,GV_MK,GV_XK
+-- Markets: GV_IT,GV_ES,GV_PT,GV_UA,GV_PL,GV_RO,GV_GE,GV_KZ,GV_HR,GV_RS,GV_BG,GV_MA,GV_CI,GV_KE,GV_UG,GV_AM,GV_BA,GV_ME,GV_KG,GV_MD,GV_NG,GV_TN
 -- Period: May 2026
 -- ══════════════════════════════════════════════════════════════════════════════
 
@@ -20,7 +20,7 @@ all_vendor_dims AS (
     chain_id, chain_name, vertical_segment, city, is_key_partner,
     menu_sessions, gmv_eur, vps_v11
   FROM `fulfillment-dwh-production.curated_data_shared_dmart.ls_vps_stg_monthly`
-  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
 AND report_month = DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH),MONTH)
     AND LOWER(vertical) NOT LIKE '%dark%'
     AND is_key_partner IS NOT TRUE
@@ -44,7 +44,7 @@ vendor_gmv AS (
 active_skus AS (
   SELECT global_entity_id, platform_vendor_id, platform_product_id
   FROM `fulfillment-dwh-production.cl_dmart.daily_buyable_rate`
-  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
 AND date_ref BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_DATE()
   GROUP BY ALL
   HAVING SUM(daily_buyable_rate_eligible_ref) > 0
@@ -95,7 +95,7 @@ all_vendor_product_sales AS (
     ON o.global_entity_id = ap.global_entity_id
     AND o.platform_vendor_id = ap.platform_vendor_id
     AND item.platform_product_id = ap.platform_product_id
-  WHERE o.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE o.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
     AND o.order_created_date_lt >= '2026-05-01' AND o.order_created_date_lt <= '2026-05-31'
     AND o.is_successful IS TRUE
   GROUP BY ALL
@@ -228,7 +228,7 @@ vendor_users AS (
   LEFT JOIN UNNEST(vendors) v
   WHERE NOT COALESCE(u.is_deleted, FALSE)
     AND NOT COALESCE(v.node_is_deleted, FALSE)
-    AND v.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+    AND v.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
   GROUP BY ALL
 ),
 

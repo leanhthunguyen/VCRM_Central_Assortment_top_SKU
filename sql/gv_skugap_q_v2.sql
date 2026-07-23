@@ -2,7 +2,7 @@
 -- SKU Gap Recommendation — Glovo Platform (consolidated alias tables)
 -- Demand alias: vendor_crm_comms_use_case_alias_table_consevative
 -- Supply alias: vendor_crm_comms_use_case_alias_table_aggressive
--- Markets: GV_IT,GV_ES,GV_PT,GV_UA,GV_PL,GV_RO,GV_GE,GV_KZ,GV_HR,GV_RS,GV_BG,GV_MA,GV_CI,GV_KE,GV_UG,GV_GH,GV_AM,GV_AZ,GV_BA,GV_ME,GV_MK,GV_XK
+-- Markets: GV_IT,GV_ES,GV_PT,GV_UA,GV_PL,GV_RO,GV_GE,GV_KZ,GV_HR,GV_RS,GV_BG,GV_MA,GV_CI,GV_KE,GV_UG,GV_AM,GV_BA,GV_ME,GV_KG,GV_MD,GV_NG,GV_TN
 -- Period: May 2026
 -- ══════════════════════════════════════════════════════════════════════════════
 
@@ -51,7 +51,7 @@ catalog_base AS (
     c.master_product_created_at_utc
   FROM `fulfillment-dwh-production.cl_dmart.qc_catalog_products` c
   CROSS JOIN UNNEST(vendor_products) AS vp
-  WHERE c.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE c.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
     AND c.catalog_master_product_id IS NOT NULL
     AND vp.platform_product_id IS NOT NULL
   QUALIFY ROW_NUMBER() OVER (
@@ -81,7 +81,7 @@ all_vendor_dims AS (
     chain_id, chain_name, vertical_segment, city, is_key_partner,
     menu_sessions, gmv_eur, vps_v11
   FROM `fulfillment-dwh-production.curated_data_shared_dmart.ls_vps_stg_monthly`
-  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
     AND report_month = '2026-05-01'
     AND LOWER(vertical) NOT LIKE '%dark%'
     AND is_key_partner IS NOT TRUE
@@ -105,7 +105,7 @@ vendor_gmv AS (
 active_skus AS (
   SELECT global_entity_id, platform_vendor_id, platform_product_id
   FROM `fulfillment-dwh-production.cl_dmart.daily_buyable_rate`
-  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
     AND date_ref >= '2026-05-01' AND date_ref <= '2026-05-31'
   GROUP BY ALL
   HAVING SUM(daily_buyable_rate_eligible_ref) > 0
@@ -154,7 +154,7 @@ all_vendor_product_sales AS (
     ON o.global_entity_id = ap.global_entity_id
     AND o.platform_vendor_id = ap.platform_vendor_id
     AND item.platform_product_id = ap.platform_product_id
-  WHERE o.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+  WHERE o.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
     AND o.order_created_date_lt >= '2026-05-01' AND o.order_created_date_lt <= '2026-05-31'
     AND o.is_successful IS TRUE
     AND o.vertical_type != 'darkstores'
@@ -288,7 +288,7 @@ vendor_users AS (
   LEFT JOIN UNNEST(vendors) v
   WHERE NOT COALESCE(u.is_deleted, FALSE)
     AND NOT COALESCE(v.node_is_deleted, FALSE)
-    AND v.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
+    AND v.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_AM','GV_BA','GV_ME','GV_KG','GV_MD','GV_NG','GV_TN')
   GROUP BY ALL
 ),
 
