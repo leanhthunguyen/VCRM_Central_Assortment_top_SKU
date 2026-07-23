@@ -301,9 +301,10 @@ insider_attributes AS (
     cd_role,
     cd_is_multi_vendor_user
   FROM `fulfillment-dwh-production.curated_data_shared_vendor.growth_vendor_communications_attributes_export`
-)
+),
 
 -- ─── FINAL OUTPUT ────────────────────────────────────────────────────────────
+final_output AS (
 SELECT
   global_entity_id, vertical_segment, city,
   platform_vendor_id, vendor_name, vendor_sessions,
