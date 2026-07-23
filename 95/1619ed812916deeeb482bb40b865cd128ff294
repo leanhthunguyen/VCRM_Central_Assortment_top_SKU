@@ -1,0 +1,21 @@
+sql/gv_skugap_q_v2.sql
+  s_c2b7ba8f0ec8ea::t_8af83150b3afd8 15,22,32-33
+  s_c2b7ba8f0ec8ea::t_050ba640541b16 48-51,62-68,70-71,73-74
+  s_c2b7ba8f0ec8ea::t_adc87a54d17bc5 160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "951619ed812916deeeb482bb40b865cd128ff294",
+  "prompts": {},
+  "sessions": {
+    "s_c2b7ba8f0ec8ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf2ad2db-b2bb-407d-bc03-39180a015dd8",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Thu Nguyen <thu.nguyen@deliveryhero.com>"
+    }
+  }
+}
