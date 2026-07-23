@@ -1,7 +1,7 @@
 -- ══════════════════════════════════════════════════════════════════════════════
--- SKU Gap Recommendation — Glovo Platform (per-platform alias tables)
--- Demand alias: vendor_crm_comms_use_case_alias_table_GV
--- Supply alias: vendor_crm_comms_use_case_alias_table_GV_supply
+-- SKU Gap Recommendation — Glovo Platform (consolidated alias tables)
+-- Demand alias: vendor_crm_comms_use_case_alias_table_consevative
+-- Supply alias: vendor_crm_comms_use_case_alias_table_aggressive
 -- Markets: GV_IT,GV_ES,GV_PT,GV_UA,GV_PL,GV_RO,GV_GE,GV_KZ,GV_HR,GV_RS,GV_BG,GV_MA,GV_CI,GV_KE,GV_UG,GV_GH,GV_AM,GV_AZ,GV_BA,GV_ME,GV_MK,GV_XK
 -- Period: May 2026
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -11,13 +11,13 @@ WITH
 -- ─── STEP 1a: DEMAND ALIAS (conservative) ───────────────────────────────────
 demand_alias AS (
   SELECT global_entity_id, catalog_master_product_id, alias_product_id
-  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_GV`
+  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_consevative`
 ),
 
 -- ─── STEP 1b: SUPPLY ALIAS (aggressive) ─────────────────────────────────────
 supply_alias AS (
   SELECT global_entity_id, catalog_master_product_id, alias_product_id
-  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_GV_supply`
+  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_aggressive`
 ),
 
 -- ─── STEP 2: PRODUCT METADATA ───────────────────────────────────────────────
@@ -26,7 +26,7 @@ product_metadata AS (
     global_entity_id, alias_product_id, catalog_master_product_name_alias,
     primary_name_local AS product_name_local, primary_name_english AS product_name_english,
     primary_barcode, primary_image_url AS product_image_url
-  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_GV`
+  FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_consevative`
   WHERE catalog_master_product_id = alias_product_id
 ),
 
