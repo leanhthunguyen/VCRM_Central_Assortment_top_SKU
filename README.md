@@ -101,9 +101,7 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 | Query | Purpose |
 |---|---|
 | `sql/lookup_tables_create.sql` | Pre-materialized lookup tables — run ONCE after refreshing alias tables |
-| `sql/gv_demand_alias_create.sql` | Glovo conservative alias table (separate for performance) |
-| `sql/gv_supply_alias_create.sql` | Glovo aggressive alias table (separate for performance) |
-| `sql/gv_skugap_q_v2.sql` | Glovo SKU gap query v2 (uses dedicated Glovo alias tables) |
+| `sql/gv_skugap_q_v2.sql` | Glovo SKU gap query v2 (uses consolidated alias tables directly) |
 
 ## BigQuery Tables
 
@@ -111,10 +109,8 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 
 | Table | Source |
 |---|---|
-| `vendor_crm_comms_use_case_alias_table_consevative` | Conservative alias — demand aggregation |
-| `vendor_crm_comms_use_case_alias_table_aggressive` | Aggressive alias — catalog matching |
-| `vendor_crm_comms_use_case_alias_table_GV` | Glovo conservative alias |
-| `vendor_crm_comms_use_case_alias_table_GV_supply` | Glovo aggressive alias |
+| `vendor_crm_comms_use_case_alias_table_consevative` | Conservative alias — demand aggregation (all platforms incl. Glovo) |
+| `vendor_crm_comms_use_case_alias_table_aggressive` | Aggressive alias — catalog matching (all platforms incl. Glovo) |
 | `ls_vps_stg_monthly` | Vendor dimensions (GMV, VPS, vertical) |
 | `daily_buyable_rate` | Product availability signals |
 
@@ -131,7 +127,6 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 1. Refresh alias tables (monthly, after catalog data updates)
 2. Run `sql/lookup_tables_create.sql` to rebuild lookup/bridge/metadata tables
 3. Run platform-specific SKU gap queries for the new month
-4. For Glovo: run `gv_demand_alias_create.sql` + `gv_supply_alias_create.sql` first, then `gv_skugap_q_v2.sql`
 
 ## Known Limitations
 
@@ -139,7 +134,7 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 |---|---|---|
 | ~1-2% under-merge (dual alias) | Some gap recommendations for products the vendor already sells under a different name | Email copy: "may go by a different name on your menu" |
 | Efood has no buyable rate data | Cannot determine active SKUs → no recommendations for Efood | Need alternative active product signal |
-| Glovo query performance | 8.6M products too large for consolidated tables | Dedicated per-platform alias tables |
+| Glovo catalog size | 9M+ products — largest platform section | Consolidated with all platforms; runs in ~5-10 min per alias INSERT |
 
 ## Repository Structure
 
@@ -154,9 +149,7 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 │   ├── ef_skugap_q.sql              — Efood SKU gap query (2 markets)
 │   ├── all_skugap_q.sql             — All-platform SKU gap query (no entity filter)
 │   ├── lookup_tables_create.sql     — Pre-materialized lookup tables (run after alias refresh)
-│   ├── gv_demand_alias_create.sql   — Glovo conservative alias table
-│   ├── gv_supply_alias_create.sql   — Glovo aggressive alias table
-│   └── gv_skugap_q_v2.sql          — Glovo SKU gap v2 (uses dedicated alias tables)
+│   └── gv_skugap_q_v2.sql          — Glovo SKU gap v2 (uses consolidated alias tables)
 └── docs/
     ├── pipeline-logic.md            — 12-step pipeline walkthrough with filter rationale
     ├── email-template.md            — Vendor email copy and format
