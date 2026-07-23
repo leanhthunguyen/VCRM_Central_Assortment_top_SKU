@@ -1,0 +1,19 @@
+sql/gv_skugap_q_v2.sql
+  s_c2b7ba8f0ec8ea::t_6df7917eb1f623 304,307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "71d9d513a165ea027cd4dd1c3353398a2c39c502",
+  "prompts": {},
+  "sessions": {
+    "s_c2b7ba8f0ec8ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bf2ad2db-b2bb-407d-bc03-39180a015dd8",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Thu Nguyen <thu.nguyen@deliveryhero.com>"
+    }
+  }
+}
