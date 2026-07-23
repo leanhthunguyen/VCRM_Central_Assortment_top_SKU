@@ -12,12 +12,14 @@ WITH
 demand_alias AS (
   SELECT global_entity_id, catalog_master_product_id, alias_product_id
   FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_consevative`
+  WHERE global_entity_id LIKE 'GV_%'
 ),
 
 -- ─── STEP 1b: SUPPLY ALIAS (aggressive) ─────────────────────────────────────
 supply_alias AS (
   SELECT global_entity_id, catalog_master_product_id, alias_product_id
   FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_aggressive`
+  WHERE global_entity_id LIKE 'GV_%'
 ),
 
 -- ─── STEP 2: PRODUCT METADATA ───────────────────────────────────────────────
@@ -27,7 +29,8 @@ product_metadata AS (
     primary_name_local AS product_name_local, primary_name_english AS product_name_english,
     primary_barcode, primary_image_url AS product_image_url
   FROM `dh-darkstores-stg.local_shops_analytics.vendor_crm_comms_use_case_alias_table_consevative`
-  WHERE catalog_master_product_id = alias_product_id
+  WHERE global_entity_id LIKE 'GV_%'
+    AND catalog_master_product_id = alias_product_id
 ),
 
 -- ─── STEP 3: BRIDGE demand ↔ supply ─────────────────────────────────────────
@@ -42,14 +45,12 @@ demand_to_supply_bridge AS (
     AND d.catalog_master_product_id = s.catalog_master_product_id
 ),
 
--- ─── STEP 4a: MAP platform_product_id → DEMAND alias ────────────────────────
-demand_product_to_alias AS (
-  SELECT c.global_entity_id, vp.platform_product_id, al.alias_product_id
+-- ─── STEP 4: MAP platform_product_id → BOTH aliases (single catalog scan) ──
+catalog_base AS (
+  SELECT c.global_entity_id, c.catalog_master_product_id, vp.platform_product_id,
+    c.master_product_created_at_utc
   FROM `fulfillment-dwh-production.cl_dmart.qc_catalog_products` c
   CROSS JOIN UNNEST(vendor_products) AS vp
-  JOIN demand_alias al
-    ON c.global_entity_id = al.global_entity_id
-    AND c.catalog_master_product_id = al.catalog_master_product_id
   WHERE c.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
     AND c.catalog_master_product_id IS NOT NULL
     AND vp.platform_product_id IS NOT NULL
@@ -58,22 +59,19 @@ demand_product_to_alias AS (
     ORDER BY c.master_product_created_at_utc DESC NULLS LAST
   ) = 1
 ),
-
--- ─── STEP 4b: MAP platform_product_id → SUPPLY alias ────────────────────────
+demand_product_to_alias AS (
+  SELECT cb.global_entity_id, cb.platform_product_id, al.alias_product_id
+  FROM catalog_base cb
+  JOIN demand_alias al
+    ON cb.global_entity_id = al.global_entity_id
+    AND cb.catalog_master_product_id = al.catalog_master_product_id
+),
 supply_product_to_alias AS (
-  SELECT c.global_entity_id, vp.platform_product_id, al.alias_product_id
-  FROM `fulfillment-dwh-production.cl_dmart.qc_catalog_products` c
-  CROSS JOIN UNNEST(vendor_products) AS vp
+  SELECT cb.global_entity_id, cb.platform_product_id, al.alias_product_id
+  FROM catalog_base cb
   JOIN supply_alias al
-    ON c.global_entity_id = al.global_entity_id
-    AND c.catalog_master_product_id = al.catalog_master_product_id
-  WHERE c.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
-    AND c.catalog_master_product_id IS NOT NULL
-    AND vp.platform_product_id IS NOT NULL
-  QUALIFY ROW_NUMBER() OVER (
-    PARTITION BY c.global_entity_id, vp.platform_product_id
-    ORDER BY c.master_product_created_at_utc DESC NULLS LAST
-  ) = 1
+    ON cb.global_entity_id = al.global_entity_id
+    AND cb.catalog_master_product_id = al.catalog_master_product_id
 ),
 
 -- ─── STEP 5: VENDOR DIMENSIONS ──────────────────────────────────────────────
@@ -159,6 +157,7 @@ all_vendor_product_sales AS (
   WHERE o.global_entity_id IN ('GV_IT','GV_ES','GV_PT','GV_UA','GV_PL','GV_RO','GV_GE','GV_KZ','GV_HR','GV_RS','GV_BG','GV_MA','GV_CI','GV_KE','GV_UG','GV_GH','GV_AM','GV_AZ','GV_BA','GV_ME','GV_MK','GV_XK')
     AND o.order_created_date_lt >= '2026-05-01' AND o.order_created_date_lt <= '2026-05-31'
     AND o.is_successful IS TRUE
+    AND o.vertical_type != 'darkstores'
   GROUP BY ALL
 ),
 
