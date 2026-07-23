@@ -116,16 +116,22 @@ Total opportunity represents **3.2% of NKP vendor GMV** and **1.2% of all vendor
 
 ### Lookup Tables (pre-materialized)
 
-| Table | Purpose |
-|---|---|
-| `vendor_crm_comms_product_alias_lookup` | Product → alias mapping (avoids catalog scan at runtime) |
-| `vendor_crm_comms_demand_supply_bridge` | Conservative ↔ aggressive alias ID bridge |
-| `vendor_crm_comms_product_metadata` | Primary product metadata per alias group |
+The alias tables work at the `catalog_master_product_id` level, but orders and sales data work at the `platform_product_id` level. These are different IDs — multiple `platform_product_id` values are nested under one `catalog_master_product_id` in the catalog. Connecting them requires unnesting the 1.16 TB catalog table and joining both alias tables — a heavy operation.
+
+The lookup tables do this join **once** and save the result, so recommendation queries just read a flat table instead of repeating the expensive join every run.
+
+| Table | What it stores | Why |
+|---|---|---|
+| `vendor_crm_comms_product_alias_lookup` | One row per `platform_product_id` → its `demand_alias_id` + `supply_alias_id` | Avoids unnesting 1.16 TB catalog + joining both alias tables on every query run |
+| `vendor_crm_comms_demand_supply_bridge` | Every `demand_alias_id` ↔ `supply_alias_id` pair | Avoids a 23M × 23M distinct join every query run |
+| `vendor_crm_comms_product_metadata` | One row per alias group: name, image, barcode | Avoids re-reading the full alias table just for display info |
+
+**Note:** `gv_skugap_q_v2.sql` does NOT use these lookup tables — it reads the alias tables directly and builds equivalent CTEs inline. All other v1 queries (`py_skugap_q.sql`, `tb_skugap_q.sql`, etc.) depend on the lookup tables.
 
 ## Refresh Process
 
 1. Refresh alias tables (monthly, after catalog data updates)
-2. Run `sql/lookup_tables_create.sql` to rebuild lookup/bridge/metadata tables
+2. Run `sql/lookup_tables_create.sql` to rebuild lookup/bridge/metadata tables (required for v1 queries, not needed for v2)
 3. Run platform-specific SKU gap queries for the new month
 
 ## Known Limitations
